@@ -154,11 +154,13 @@ dart run flutter_launcher_icons
 - Create an upload keystore and a private, untracked
   `android/key.properties` file with `storeFile`, `storePassword`,
   `keyAlias`, and `keyPassword`. Release builds no longer use the debug key.
-- The Privacy Policy and Play Store URLs are intentionally unconfigured,
-  rather than pointing to placeholders. Supply them at build time with
-  `--dart-define=PRIVACY_POLICY_URL=https://...` and
-  `--dart-define=PLAY_STORE_URL=https://...` after the public pages/listing
-  exist.
+- The Privacy Policy link is configured as
+  `https://cgpa-foriqrauni-privacy.netlify.app`; override it at build time with
+  `--dart-define=PRIVACY_POLICY_URL=https://...` if it changes. Supply the Play
+  Store URL with `--dart-define=PLAY_STORE_URL=https://...` after the listing
+  exists.
+- Set the Play developer account ID for the About Developer link with
+  `--dart-define=PLAY_DEVELOPER_ID=YOUR_DEVELOPER_ACCOUNT_ID`.
 - Adaptive Android launcher icons are generated from the source and padded
   foreground in `assets/`; the web manifest metadata describes the calculator.
 - Store listing assets (screenshots, feature graphic, descriptions).

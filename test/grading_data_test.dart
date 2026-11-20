@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gpa_calculator_iuic/data/grading_data.dart';
+import 'package:gpa_calculator_iuic/models/course.dart';
+import 'package:gpa_calculator_iuic/models/semester_input.dart';
 
 void main() {
   group('Iqra University grading scales', () {
@@ -52,6 +54,34 @@ void main() {
   });
 
   group('GPA calculation', () {
+    test('changing scales preserves available letter grades', () {
+      final course = Course(
+        id: 'course',
+        selectedGrade: 'B+',
+        obtainedMarks: 80,
+      );
+
+      expect(course.updateScale(GradingScale.legacy), isFalse);
+      expect(course.selectedGrade, 'B+');
+      expect(course.obtainedMarks, 81);
+      expect(course.gradeBandFor(GradingScale.legacy)?.grade, 'B+');
+    });
+
+    test(
+      'changing scales clears grades that do not exist on the new scale',
+      () {
+        final course = Course(
+          id: 'course',
+          selectedGrade: 'A-',
+          obtainedMarks: 85,
+        );
+
+        expect(course.updateScale(GradingScale.legacy), isTrue);
+        expect(course.selectedGrade, isNull);
+        expect(course.obtainedMarks, isNull);
+      },
+    );
+
     test('uses the selected scale and flat grade points', () {
       expect(
         GradingData.qualityPointsFor(obtainedMarks: 89, creditHours: 3),
@@ -129,6 +159,18 @@ void main() {
       expect(result.gpa, 3.33);
     });
 
+    test('does not truncate an exactly representable decimal GPA down', () {
+      final result = GpaEngine.calculateCgpa([
+        (
+          gpa: 2.3,
+          creditHours: 10,
+          deductedQualityPoints: 0.0,
+          deductedCreditHours: 0,
+        ),
+      ]);
+      expect(result.gpa, 2.30);
+    });
+
     test('excludes the lower of the original and repeated attempts', () {
       final oldAttempt = GpaEngine.excludedRepeatAttempt(
         originalGradePoint: 1.0,
@@ -156,5 +198,10 @@ void main() {
       expect(GradingData.standingForCgpa(1.5), contains('CGPA below 2.00'));
       expect(GradingData.standingForCgpa(2.5), 'Good Standing');
     });
+  });
+
+  test('Semester GPA accepts decimal comma input', () {
+    expect(SemesterInput.parseGpa('3,5'), 3.5);
+    expect(SemesterInput.parseGpa('not a GPA'), isNull);
   });
 }

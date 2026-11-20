@@ -9,8 +9,12 @@ import '../theme.dart';
 import '../widgets/screen_header.dart';
 import 'grading_scale_screen.dart';
 
-const _kPrivacyPolicyUrl = String.fromEnvironment('PRIVACY_POLICY_URL');
+const _kPrivacyPolicyUrl = String.fromEnvironment(
+  'PRIVACY_POLICY_URL',
+  defaultValue: 'https://cgpa-foriqrauni-privacy.netlify.app',
+);
 const _kPlayStoreUrl = String.fromEnvironment('PLAY_STORE_URL');
+const _kPlayDeveloperId = String.fromEnvironment('PLAY_DEVELOPER_ID');
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -171,6 +175,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   Text(
                     'An independent student calculator that supports grading scales published by '
                     '${AppInfo.universityName}. It is not affiliated with or endorsed by the university.',
+                  ),
+                  TextButton.icon(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      _launch(
+                        _kPlayDeveloperId.isEmpty
+                            ? ''
+                            : 'https://play.google.com/store/apps/dev?id=$_kPlayDeveloperId',
+                      );
+                    },
+                    icon: const Icon(Icons.open_in_new_rounded),
+                    label: const Text('Play Store developer page'),
                   ),
                 ],
               ),

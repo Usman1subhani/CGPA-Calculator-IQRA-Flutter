@@ -32,10 +32,12 @@ class HistoryEntry {
     this.rawData = const [],
   });
 
-  List<Course> get courses => rawData.map((e) => Course.fromJson(e)).toList();
+  List<Course> get courses =>
+      rawData.map((e) => Course.fromJson(e, scale: gradingScale)).toList();
 
-  List<SemesterInput> get semesters =>
-      rawData.map((e) => SemesterInput.fromJson(e)).toList();
+  List<SemesterInput> get semesters => rawData
+      .map((e) => SemesterInput.fromJson(e, scale: gradingScale))
+      .toList();
 
   HistoryEntry copyWith({
     double? value,

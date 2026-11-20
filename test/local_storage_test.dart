@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:gpa_calculator_iuic/data/grading_data.dart';
 import 'package:gpa_calculator_iuic/models/history_entry.dart';
 import 'package:gpa_calculator_iuic/storage/local_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -33,6 +34,12 @@ void main() {
     ]);
     expect(preferences.getStringList('arid_calc_history_v1'), isNull);
     expect(await LocalStorage.instance.getThemeMode(), 'dark');
+  });
+
+  test('persists the selected grading scale', () async {
+    await LocalStorage.instance.setGradingScale(GradingScale.legacy.name);
+
+    expect(await LocalStorage.instance.getGradingScale(), 'legacy');
   });
 
   test(

@@ -1,43 +1,95 @@
+import '../data/grading_data.dart';
+
 class SupersededCourse {
   String id;
   double? originalMarks;
+  String? originalGrade;
   int originalCreditHours;
   double? repeatedMarks;
+  String? repeatedGrade;
   int repeatedCreditHours;
   String? repeatedSemesterId;
 
   SupersededCourse({
     required this.id,
     this.originalMarks,
+    this.originalGrade,
     this.originalCreditHours = 3,
     this.repeatedMarks,
+    this.repeatedGrade,
     this.repeatedCreditHours = 3,
     this.repeatedSemesterId,
   });
 
+  bool updateScale(GradingScale scale) {
+    var clearedGrade = false;
+    final originalBand = GradingData.bandForGrade(originalGrade, scale: scale);
+    if (originalGrade != null) {
+      if (originalBand == null) {
+        originalGrade = null;
+        originalMarks = null;
+        clearedGrade = true;
+      } else {
+        originalMarks = originalBand.minPercent;
+      }
+    }
+    final repeatedBand = GradingData.bandForGrade(repeatedGrade, scale: scale);
+    if (repeatedGrade != null) {
+      if (repeatedBand == null) {
+        repeatedGrade = null;
+        repeatedMarks = null;
+        clearedGrade = true;
+      } else {
+        repeatedMarks = repeatedBand.minPercent;
+      }
+    }
+    return clearedGrade;
+  }
+
   Map<String, dynamic> toJson() => {
     'id': id,
     'originalMarks': originalMarks,
+    'originalGrade': originalGrade,
     'originalCreditHours': originalCreditHours,
     'repeatedMarks': repeatedMarks,
+    'repeatedGrade': repeatedGrade,
     'repeatedCreditHours': repeatedCreditHours,
     'repeatedSemesterId': repeatedSemesterId,
   };
 
   factory SupersededCourse.fromJson(
-    Map<String, dynamic> json,
-  ) => SupersededCourse(
-    id: json['id'] as String,
-    originalMarks:
+    Map<String, dynamic> json, {
+    GradingScale scale = GradingScale.spring2025,
+  }) {
+    final originalMarks =
         (json['originalMarks'] as num?)?.toDouble() ??
-        (json['obtainedMarks'] as num?)?.toDouble(),
-    originalCreditHours:
-        json['originalCreditHours'] as int? ?? json['creditHours'] as int? ?? 3,
-    repeatedMarks: (json['repeatedMarks'] as num?)?.toDouble(),
-    repeatedCreditHours:
-        json['repeatedCreditHours'] as int? ?? json['creditHours'] as int? ?? 3,
-    repeatedSemesterId: json['repeatedSemesterId'] as String?,
-  );
+        (json['obtainedMarks'] as num?)?.toDouble();
+    final repeatedMarks = (json['repeatedMarks'] as num?)?.toDouble();
+    return SupersededCourse(
+      id: json['id'] as String,
+      originalMarks: originalMarks,
+      originalGrade:
+          json['originalGrade'] as String? ??
+          (originalMarks == null
+              ? null
+              : GradingData.bandForPercent(originalMarks, scale: scale).grade),
+      originalCreditHours:
+          json['originalCreditHours'] as int? ??
+          json['creditHours'] as int? ??
+          3,
+      repeatedMarks: repeatedMarks,
+      repeatedGrade:
+          json['repeatedGrade'] as String? ??
+          (repeatedMarks == null
+              ? null
+              : GradingData.bandForPercent(repeatedMarks, scale: scale).grade),
+      repeatedCreditHours:
+          json['repeatedCreditHours'] as int? ??
+          json['creditHours'] as int? ??
+          3,
+      repeatedSemesterId: json['repeatedSemesterId'] as String?,
+    );
+  }
 }
 
 class SemesterInput {
@@ -76,7 +128,10 @@ class SemesterInput {
     'supersededCourses': supersededCourses.map((c) => c.toJson()).toList(),
   };
 
-  factory SemesterInput.fromJson(Map<String, dynamic> json) => SemesterInput(
+  factory SemesterInput.fromJson(
+    Map<String, dynamic> json, {
+    GradingScale scale = GradingScale.spring2025,
+  }) => SemesterInput(
     id: json['id'] as String,
     name: json['name'] as String? ?? '',
     gpa: (json['gpa'] as num?)?.toDouble() ?? 0,
@@ -90,7 +145,15 @@ class SemesterInput {
         json['hasCreditHoursInput'] as bool? ??
         (json['creditHours'] as int? ?? 0) > 0,
     supersededCourses: (json['supersededCourses'] as List<dynamic>? ?? [])
-        .map((e) => SupersededCourse.fromJson(e as Map<String, dynamic>))
+        .map(
+          (e) => SupersededCourse.fromJson(
+            e as Map<String, dynamic>,
+            scale: scale,
+          ),
+        )
         .toList(),
   );
+
+  static double? parseGpa(String input) =>
+      double.tryParse(input.trim().replaceAll(',', '.'));
 }

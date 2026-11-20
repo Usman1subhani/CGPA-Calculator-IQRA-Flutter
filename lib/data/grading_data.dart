@@ -56,6 +56,14 @@ class GradingData {
   static List<GradeBand> gradeBandsFor(GradingScale scale) =>
       scale == GradingScale.legacy ? legacyGradeBands : spring2025GradeBands;
 
+  static GradeBand? bandForGrade(String? grade, {required GradingScale scale}) {
+    if (grade == null) return null;
+    for (final band in gradeBandsFor(scale)) {
+      if (band.grade == grade) return band;
+    }
+    return null;
+  }
+
   static double passingPercentFor(GradingScale scale) =>
       scale == GradingScale.legacy ? 60 : 50;
 
@@ -112,7 +120,7 @@ class GpaEngine {
   GpaEngine._();
 
   static double _truncate2(double value) =>
-      (value * 100).truncateToDouble() / 100;
+      ((value * 100) + 1e-9).floorToDouble() / 100;
 
   static ({bool original, double qualityPoints, int creditHours})
   excludedRepeatAttempt({

@@ -5,6 +5,7 @@ import '../models/history_entry.dart';
 
 const _kHistoryKey = 'iuic_calc_history_v1';
 const _kThemeKey = 'iuic_calc_theme_v1';
+const _kGradingScaleKey = 'iuic_calc_grading_scale_v1';
 const _kLegacyHistoryKey = 'arid_calc_history_v1';
 const _kLegacyThemeKey = 'arid_calc_theme_v1';
 
@@ -98,6 +99,16 @@ class LocalStorage {
     final prefs = await SharedPreferences.getInstance();
     await _migrateLegacyKeys(prefs);
     return prefs.getString(_kThemeKey);
+  }
+
+  Future<String?> getGradingScale() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kGradingScaleKey);
+  }
+
+  Future<void> setGradingScale(String scale) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kGradingScaleKey, scale);
   }
 
   Future<void> resetAll() async {

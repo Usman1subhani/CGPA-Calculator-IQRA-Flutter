@@ -32,6 +32,7 @@ class _GpaScreenState extends State<GpaScreen> {
   GpaResult? _result;
   String? _validationError;
   bool _saving = false;
+  bool _scaleLoaded = false;
   bool get _isEditing => widget.existingEntry != null;
   GradingScale _gradingScale = GradingScale.spring2025;
 
@@ -57,6 +58,40 @@ class _GpaScreenState extends State<GpaScreen> {
       _semesterController = TextEditingController(text: 'Semester');
       _addCourse();
       _addCourse();
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_isEditing || _scaleLoaded) return;
+    final appState = context.watch<AppState>();
+    if (appState.settingsLoaded) {
+      _gradingScale = appState.gradingScale;
+      _scaleLoaded = true;
+    }
+  }
+
+  void _changeGradingScale(GradingScale scale) {
+    var clearedGrade = false;
+    _scaleLoaded = true;
+    setState(() {
+      for (final course in _courses) {
+        clearedGrade = course.updateScale(scale) || clearedGrade;
+      }
+      _gradingScale = scale;
+      _result = null;
+      _validationError = null;
+    });
+    context.read<AppState>().setGradingScale(scale);
+    if (clearedGrade) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'A selected grade is unavailable in this scale. Choose a replacement.',
+          ),
+        ),
+      );
     }
   }
 
@@ -226,11 +261,7 @@ class _GpaScreenState extends State<GpaScreen> {
                 .toList(),
             onChanged: (scale) {
               if (scale != null) {
-                setState(() {
-                  _gradingScale = scale;
-                  _result = null;
-                  _validationError = null;
-                });
+                _changeGradingScale(scale);
               }
             },
           ),

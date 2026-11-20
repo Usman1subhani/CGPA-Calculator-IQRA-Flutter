@@ -27,12 +27,7 @@ class CourseCard extends StatelessWidget {
     final showGrade = course.creditHours > 0 && course.obtainedMarks != null;
     final band = showGrade ? course.gradeBandFor(gradingScale) : null;
     final gradeBands = GradingData.gradeBandsFor(gradingScale);
-    final currentValue = course.obtainedMarks == null
-        ? null
-        : GradingData.bandForPercent(
-            course.obtainedMarks!,
-            scale: gradingScale,
-          ).minPercent;
+    final currentValue = course.gradeBandFor(gradingScale)?.minPercent;
 
     return Card(
       child: Padding(
@@ -98,6 +93,11 @@ class CourseCard extends StatelessWidget {
                     }).toList(),
                     onChanged: (v) {
                       course.obtainedMarks = v;
+                      course.selectedGrade = v == null
+                          ? null
+                          : gradeBands
+                                .firstWhere((band) => band.minPercent == v)
+                                .grade;
                       onChanged();
                     },
                   ),
@@ -130,34 +130,23 @@ class CourseCard extends StatelessWidget {
             ),
             if (band != null) ...[
               const SizedBox(height: 10),
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.forGrade(
-                        band.grade,
-                      ).withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Grade ${band.grade} • ${course.qualityPointsFor(gradingScale).toStringAsFixed(2)} QP',
-                      style: TextStyle(
-                        color: AppColors.forGrade(band.grade),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12,
-                      ),
-                    ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.forGrade(band.grade).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'Grade ${band.grade} • ${course.qualityPointsFor(gradingScale).toStringAsFixed(2)} QP',
+                  style: TextStyle(
+                    color: AppColors.forGrade(band.grade),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 12,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${course.percentage!.toStringAsFixed(1)}%',
-                    style: theme.textTheme.bodySmall,
-                  ),
-                ],
+                ),
               ),
             ],
           ],
@@ -265,9 +254,9 @@ class SemesterCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: TextFormField(
-                    initialValue: semester.creditHours == 0 && semester.gpa == 0
-                        ? ''
-                        : semester.gpa.toString(),
+                    initialValue: semester.hasGpaInput
+                        ? semester.gpa.toString()
+                        : '',
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
@@ -276,7 +265,7 @@ class SemesterCard extends StatelessWidget {
                       isDense: true,
                     ),
                     onChanged: (v) {
-                      final parsed = double.tryParse(v);
+                      final parsed = SemesterInput.parseGpa(v);
                       semester.hasGpaInput = v.trim().isNotEmpty;
                       semester.hasInvalidGpaInput =
                           semester.hasGpaInput && parsed == null;
@@ -407,11 +396,18 @@ class SemesterCard extends StatelessWidget {
                         Expanded(
                           child: _gradePicker(
                             label: 'Original grade',
-                            value: course.originalMarks,
+                            value: course.originalGrade,
                             scale: gradingScale,
                             keyName: 'original-${course.id}',
                             onChanged: (value) {
-                              course.originalMarks = value;
+                              course.originalGrade = value;
+                              course.originalMarks = value == null
+                                  ? null
+                                  : GradingData.gradeBandsFor(gradingScale)
+                                        .firstWhere(
+                                          (band) => band.grade == value,
+                                        )
+                                        .minPercent;
                               onChanged();
                             },
                           ),
@@ -420,11 +416,18 @@ class SemesterCard extends StatelessWidget {
                         Expanded(
                           child: _gradePicker(
                             label: 'Repeat grade',
-                            value: course.repeatedMarks,
+                            value: course.repeatedGrade,
                             scale: gradingScale,
                             keyName: 'repeat-${course.id}',
                             onChanged: (value) {
-                              course.repeatedMarks = value;
+                              course.repeatedGrade = value;
+                              course.repeatedMarks = value == null
+                                  ? null
+                                  : GradingData.gradeBandsFor(gradingScale)
+                                        .firstWhere(
+                                          (band) => band.grade == value,
+                                        )
+                                        .minPercent;
                               onChanged();
                             },
                           ),
@@ -502,25 +505,21 @@ class SemesterCard extends StatelessWidget {
 
   Widget _gradePicker({
     required String label,
-    required double? value,
+    required String? value,
     required GradingScale scale,
     required String keyName,
-    required ValueChanged<double?> onChanged,
+    required ValueChanged<String?> onChanged,
   }) {
     final bands = GradingData.gradeBandsFor(scale);
-    final selected = value == null
-        ? null
-        : GradingData.bandForPercent(value, scale: scale).minPercent;
-    return DropdownButtonFormField<double>(
+    final selected = bands.any((band) => band.grade == value) ? value : null;
+    return DropdownButtonFormField<String>(
       key: ValueKey('$keyName-${scale.name}'),
       initialValue: selected,
       decoration: InputDecoration(labelText: label, isDense: true),
       items: bands
           .map(
-            (band) => DropdownMenuItem(
-              value: band.minPercent,
-              child: Text(band.grade),
-            ),
+            (band) =>
+                DropdownMenuItem(value: band.grade, child: Text(band.grade)),
           )
           .toList(),
       onChanged: onChanged,

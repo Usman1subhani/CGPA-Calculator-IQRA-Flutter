@@ -32,6 +32,8 @@ migrate_working_dir/
 .pub/
 /build/
 /coverage/
+/rename_app.py
+/ios_rename.py
 
 # Symbolication related
 app.*.symbols
