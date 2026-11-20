@@ -1,7 +1,50 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+}
+
+val selectedApplicationId = providers.gradleProperty("applicationId").orNull
+    ?: "com.example.gpa_calculator_iuic"
+val keyPropertiesFile = rootProject.file("key.properties")
+val keyProperties = Properties()
+if (keyPropertiesFile.exists()) {
+    keyPropertiesFile.inputStream().use { keyProperties.load(it) }
+}
+
+val verifyReleaseConfiguration = tasks.register("verifyReleaseConfiguration") {
+    doLast {
+        val validApplicationId = selectedApplicationId.split(".").let { parts ->
+            parts.size >= 2 && parts.all {
+                it.matches(Regex("[A-Za-z][A-Za-z0-9_]*"))
+            }
+        }
+        check(validApplicationId && !selectedApplicationId.startsWith("com.example")) {
+            "Set a permanent applicationId with -PapplicationId=<your.unique.package.id> before building a release."
+        }
+
+        val requiredKeys = listOf(
+            "storeFile",
+            "storePassword",
+            "keyAlias",
+            "keyPassword",
+        )
+        val missingKeys = requiredKeys.filter { keyProperties.getProperty(it).isNullOrBlank() }
+        check(keyPropertiesFile.exists() && missingKeys.isEmpty()) {
+            "Configure android/key.properties with storeFile, storePassword, keyAlias, and keyPassword before building a release."
+        }
+        check(rootProject.file(keyProperties.getProperty("storeFile")).isFile) {
+            "The keystore file configured by android/key.properties does not exist."
+        }
+    }
+}
+
+tasks.configureEach {
+    if (name.startsWith("assembleRelease") || name.startsWith("bundleRelease")) {
+        dependsOn(verifyReleaseConfiguration)
+    }
 }
 
 android {
@@ -15,8 +58,7 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.gpa_calculator_iuic"
+        applicationId = selectedApplicationId
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -25,11 +67,21 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            val storeFilePath = keyProperties.getProperty("storeFile")
+            if (!storeFilePath.isNullOrBlank()) {
+                storeFile = rootProject.file(storeFilePath)
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

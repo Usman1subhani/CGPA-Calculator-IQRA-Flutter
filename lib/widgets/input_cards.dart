@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:gpa_calculator_iuic/data/grading_data.dart';
 import '../models/course.dart';
 import '../models/semester_input.dart';
+import '../models/history_entry.dart';
 import '../theme.dart';
 
 class CourseCard extends StatelessWidget {
   final Course course;
   final int index;
-  final bool isPercentageMode;
+  final GradingScale gradingScale;
   final VoidCallback onDelete;
   final VoidCallback onChanged;
 
@@ -15,7 +16,7 @@ class CourseCard extends StatelessWidget {
     super.key,
     required this.course,
     required this.index,
-    this.isPercentageMode = false,
+    this.gradingScale = GradingScale.spring2025,
     required this.onDelete,
     required this.onChanged,
   });
@@ -23,22 +24,15 @@ class CourseCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final showGrade = course.creditHours > 0 && course.obtainedMarks > 0;
-    final band = showGrade ? course.gradeBand : null;
-
-    // Ensure the current obtainedMarks is exactly one of the minPercent values,
-    // otherwise the Dropdown will throw an error if it doesn't match an item.
-    final validValues = GradingData.gradeBands
-        .map((b) => b.minPercent)
-        .toList();
-    double? currentValue = course.obtainedMarks > 0
-        ? course.obtainedMarks
-        : null;
-    if (currentValue != null && !validValues.contains(currentValue)) {
-      // If it doesn't match exactly (e.g., from old data), snap it to the closest band's minPercent.
-      currentValue = GradingData.bandForPercent(currentValue).minPercent;
-      // We don't call setState here to avoid build loops, but the UI will show the snapped value.
-    }
+    final showGrade = course.creditHours > 0 && course.obtainedMarks != null;
+    final band = showGrade ? course.gradeBandFor(gradingScale) : null;
+    final gradeBands = GradingData.gradeBandsFor(gradingScale);
+    final currentValue = course.obtainedMarks == null
+        ? null
+        : GradingData.bandForPercent(
+            course.obtainedMarks!,
+            scale: gradingScale,
+          ).minPercent;
 
     return Card(
       child: Padding(
@@ -88,22 +82,22 @@ class CourseCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: DropdownButtonFormField<double>(
-                    value: currentValue,
+                    key: ValueKey(
+                      'course-grade-${course.id}-${gradingScale.name}',
+                    ),
+                    initialValue: currentValue,
                     decoration: InputDecoration(
-                      labelText: isPercentageMode ? 'Percentage' : 'Grade',
+                      labelText: 'Grade',
                       isDense: true,
                     ),
-                    items: GradingData.gradeBands.map((b) {
-                      final label = isPercentageMode
-                          ? '${b.minPercent.toInt()}-${b.maxPercent.toInt()}%'
-                          : b.grade;
+                    items: gradeBands.map((b) {
                       return DropdownMenuItem<double>(
                         value: b.minPercent,
-                        child: Text(label),
+                        child: Text(b.grade),
                       );
                     }).toList(),
                     onChanged: (v) {
-                      course.obtainedMarks = v ?? 0;
+                      course.obtainedMarks = v;
                       onChanged();
                     },
                   ),
@@ -111,7 +105,11 @@ class CourseCard extends StatelessWidget {
                 const SizedBox(width: 10),
                 Expanded(
                   child: DropdownButtonFormField<int>(
-                    initialValue: course.creditHours,
+                    key: ValueKey('course-hours-${course.id}'),
+                    initialValue:
+                        course.creditHours >= 1 && course.creditHours <= 6
+                        ? course.creditHours
+                        : null,
                     decoration: const InputDecoration(
                       labelText: 'Credit hrs',
                       isDense: true,
@@ -146,7 +144,7 @@ class CourseCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
-                      'Grade ${band.grade} • ${course.qualityPoints.toStringAsFixed(2)} QP',
+                      'Grade ${band.grade} • ${course.qualityPointsFor(gradingScale).toStringAsFixed(2)} QP',
                       style: TextStyle(
                         color: AppColors.forGrade(band.grade),
                         fontWeight: FontWeight.w600,
@@ -156,7 +154,7 @@ class CourseCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    '${course.percentage.toStringAsFixed(1)}%',
+                    '${course.percentage!.toStringAsFixed(1)}%',
                     style: theme.textTheme.bodySmall,
                   ),
                 ],
@@ -171,16 +169,24 @@ class CourseCard extends StatelessWidget {
 
 class SemesterCard extends StatelessWidget {
   final SemesterInput semester;
+  final List<SemesterInput> semesters;
+  final List<HistoryEntry> savedGpas;
   final int index;
+  final GradingScale gradingScale;
   final VoidCallback onDelete;
   final VoidCallback onChanged;
+  final ValueChanged<HistoryEntry> onImportGpa;
 
   const SemesterCard({
     super.key,
     required this.semester,
+    required this.semesters,
+    required this.savedGpas,
     required this.index,
+    required this.gradingScale,
     required this.onDelete,
     required this.onChanged,
+    required this.onImportGpa,
   });
 
   @override
@@ -216,7 +222,10 @@ class SemesterCard extends StatelessWidget {
                       hintText: 'Semester name',
                       isDense: true,
                     ),
-                    onChanged: (v) => semester.name = v,
+                    onChanged: (v) {
+                      semester.name = v;
+                      onChanged();
+                    },
                   ),
                 ),
                 IconButton(
@@ -228,11 +237,35 @@ class SemesterCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 10),
+            if (savedGpas.isNotEmpty)
+              DropdownButtonFormField<String>(
+                key: ValueKey('gpa-import-${semester.id}'),
+                decoration: const InputDecoration(
+                  labelText: 'Use saved GPA calculation (optional)',
+                  isDense: true,
+                ),
+                items: savedGpas
+                    .map(
+                      (entry) => DropdownMenuItem(
+                        value: entry.id,
+                        child: Text(
+                          '${entry.title} • ${entry.value.toStringAsFixed(2)}',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (id) {
+                  if (id == null) return;
+                  onImportGpa(savedGpas.firstWhere((entry) => entry.id == id));
+                },
+              ),
+            if (savedGpas.isNotEmpty) const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: TextFormField(
-                    initialValue: semester.gpa == 0
+                    initialValue: semester.creditHours == 0 && semester.gpa == 0
                         ? ''
                         : semester.gpa.toString(),
                     keyboardType: const TextInputType.numberWithOptions(
@@ -243,7 +276,12 @@ class SemesterCard extends StatelessWidget {
                       isDense: true,
                     ),
                     onChanged: (v) {
-                      semester.gpa = double.tryParse(v) ?? 0;
+                      final parsed = double.tryParse(v);
+                      semester.hasGpaInput = v.trim().isNotEmpty;
+                      semester.hasInvalidGpaInput =
+                          semester.hasGpaInput && parsed == null;
+                      semester.gpa = parsed ?? 0;
+                      semester.qualityPoints = null;
                       onChanged();
                     },
                   ),
@@ -260,7 +298,12 @@ class SemesterCard extends StatelessWidget {
                       isDense: true,
                     ),
                     onChanged: (v) {
-                      semester.creditHours = int.tryParse(v) ?? 0;
+                      final parsed = int.tryParse(v);
+                      semester.hasCreditHoursInput = v.trim().isNotEmpty;
+                      semester.hasInvalidCreditHoursInput =
+                          semester.hasCreditHoursInput && parsed == null;
+                      semester.creditHours = parsed ?? 0;
+                      semester.qualityPoints = null;
                       onChanged();
                     },
                   ),
@@ -271,7 +314,11 @@ class SemesterCard extends StatelessWidget {
             ...semester.supersededCourses.asMap().entries.map((entry) {
               final sIndex = entry.key;
               final course = entry.value;
+              final repeatSemesters = semesters
+                  .where((candidate) => candidate.id != semester.id)
+                  .toList();
               return Container(
+                key: ValueKey(course.id),
                 margin: const EdgeInsets.only(top: 8),
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
@@ -314,68 +361,104 @@ class SemesterCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Enter this course\'s percentage exactly as it was in the '
-                      'ORIGINAL attempt (before it was repeated/improved).',
+                      'The higher grade counts toward CGPA. Select both attempts '
+                      'and the semester containing the repeat.',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.error,
                         fontStyle: FontStyle.italic,
                       ),
                     ),
                     const SizedBox(height: 8),
+                    DropdownButtonFormField<String>(
+                      key: ValueKey(
+                        'repeat-semester-${course.id}-${semester.id}',
+                      ),
+                      initialValue:
+                          repeatSemesters.any(
+                            (candidate) =>
+                                candidate.id == course.repeatedSemesterId,
+                          )
+                          ? course.repeatedSemesterId
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: 'Semester of repeat',
+                        isDense: true,
+                      ),
+                      items: repeatSemesters
+                          .map(
+                            (candidate) => DropdownMenuItem(
+                              value: candidate.id,
+                              child: Text(
+                                candidate.name.isEmpty
+                                    ? 'Semester ${semesters.indexOf(candidate) + 1}'
+                                    : candidate.name,
+                              ),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (id) {
+                        course.repeatedSemesterId = id;
+                        onChanged();
+                      },
+                    ),
+                    const SizedBox(height: 8),
                     Row(
                       children: [
                         Expanded(
-                          child: TextFormField(
-                            initialValue: course.obtainedMarks == 0
-                                ? ''
-                                : course.obtainedMarks.toString(),
-                            keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true,
-                            ),
-                            decoration: const InputDecoration(
-                              labelText: 'Percentage (%)',
-                              isDense: true,
-                            ),
-                            onChanged: (v) {
-                              course.obtainedMarks = double.tryParse(v) ?? 0;
+                          child: _gradePicker(
+                            label: 'Original grade',
+                            value: course.originalMarks,
+                            scale: gradingScale,
+                            keyName: 'original-${course.id}',
+                            onChanged: (value) {
+                              course.originalMarks = value;
                               onChanged();
                             },
                           ),
                         ),
                         const SizedBox(width: 10),
                         Expanded(
-                          child: DropdownButtonFormField<int>(
-                            initialValue: course.creditHours,
-                            decoration: const InputDecoration(
-                              labelText: 'Credit hrs',
-                              isDense: true,
-                            ),
-                            items: List.generate(6, (i) => i + 1)
-                                .map(
-                                  (ch) => DropdownMenuItem(
-                                    value: ch,
-                                    child: Text('$ch'),
-                                  ),
-                                )
-                                .toList(),
-                            onChanged: (v) {
-                              course.creditHours = v ?? 3;
+                          child: _gradePicker(
+                            label: 'Repeat grade',
+                            value: course.repeatedMarks,
+                            scale: gradingScale,
+                            keyName: 'repeat-${course.id}',
+                            onChanged: (value) {
+                              course.repeatedMarks = value;
                               onChanged();
                             },
                           ),
                         ),
                       ],
                     ),
-                    if (course.obtainedMarks > 0)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          'Excluded from CGPA: ${course.qualityPoints.toStringAsFixed(2)} QP, ${course.creditHours} credit hrs',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.error,
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _creditPicker(
+                            label: 'Original hrs',
+                            value: course.originalCreditHours,
+                            keyName: 'original-hours-${course.id}',
+                            onChanged: (value) {
+                              course.originalCreditHours = value;
+                              onChanged();
+                            },
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _creditPicker(
+                            label: 'Repeat hrs',
+                            value: course.repeatedCreditHours,
+                            keyName: 'repeat-hours-${course.id}',
+                            onChanged: (value) {
+                              course.repeatedCreditHours = value;
+                              onChanged();
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               );
@@ -401,7 +484,7 @@ class SemesterCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      'Add repeated/improved course from this semester',
+                      'Add a repeated/improved course',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.primary,
                         fontWeight: FontWeight.w600,
@@ -414,6 +497,52 @@ class SemesterCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _gradePicker({
+    required String label,
+    required double? value,
+    required GradingScale scale,
+    required String keyName,
+    required ValueChanged<double?> onChanged,
+  }) {
+    final bands = GradingData.gradeBandsFor(scale);
+    final selected = value == null
+        ? null
+        : GradingData.bandForPercent(value, scale: scale).minPercent;
+    return DropdownButtonFormField<double>(
+      key: ValueKey('$keyName-${scale.name}'),
+      initialValue: selected,
+      decoration: InputDecoration(labelText: label, isDense: true),
+      items: bands
+          .map(
+            (band) => DropdownMenuItem(
+              value: band.minPercent,
+              child: Text(band.grade),
+            ),
+          )
+          .toList(),
+      onChanged: onChanged,
+    );
+  }
+
+  Widget _creditPicker({
+    required String label,
+    required int value,
+    required String keyName,
+    required ValueChanged<int> onChanged,
+  }) {
+    return DropdownButtonFormField<int>(
+      key: ValueKey(keyName),
+      initialValue: value >= 1 && value <= 6 ? value : null,
+      decoration: InputDecoration(labelText: label, isDense: true),
+      items: List.generate(6, (i) => i + 1)
+          .map((hours) => DropdownMenuItem(value: hours, child: Text('$hours')))
+          .toList(),
+      onChanged: (hours) {
+        if (hours != null) onChanged(hours);
+      },
     );
   }
 }

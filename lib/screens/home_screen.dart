@@ -93,7 +93,12 @@ class HomeScreen extends StatelessWidget {
                   .map(
                     (e) => HistoryTile(
                       entry: e,
-                      onDelete: () => state.deleteHistory(e.id),
+                      onDelete: () => deleteHistoryWithUndo(
+                        context,
+                        entry: e,
+                        delete: () => state.deleteHistory(e.id),
+                        restore: state.restoreHistory,
+                      ),
                       onTap: () => _openEntry(context, e),
                     ),
                   ),

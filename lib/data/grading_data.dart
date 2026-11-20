@@ -1,21 +1,13 @@
-/// Official grading data for Iqra University (undergraduate/ADP programs).
-///
-/// Source: Iqra University's own "New Grading Scheme and Assessment Models —
-/// Implementation from Spring 2025" circular (letterhead document), cross-
-/// verified against an independent, actively-maintained 2026 guide
-/// (pakstudentcalc.com/archives/iqra-university-grading-system-offical-2026)
-/// which reproduces the identical table. Both agree exactly, so this is
-/// treated as the current, authoritative scale — NOT the older scheme
-/// (A=4.0 at 88%+, B+=3.5, B=3.0, C+=2.5, C=2.0, no +/- grades) still
-/// quoted by some third-party sites (scholaro, campusaxis, meershair),
-/// which predates the Spring 2025 revision.
-///
-/// Unlike UAAR, Iqra's grade points are a flat value per letter grade —
-/// there is no official "Quality Points" interpolation table, and a
-/// course's percentage is its own mark out of 100 (not scaled by credit
-/// hours). GPA / CGPA = (Sum of Quality Points) / (Sum of Credit Hours),
-/// where a course's quality points = its flat grade point x its credit
-/// hours.
+enum GradingScale {
+  legacy,
+  spring2025;
+
+  String get label => switch (this) {
+    GradingScale.legacy => 'Admitted before Spring 2025',
+    GradingScale.spring2025 => 'Newly admitted Spring 2025 onward',
+  };
+}
+
 class GradeBand {
   final String grade;
   final double gradePoint;
@@ -38,105 +30,141 @@ class GradingData {
   static const String universityName = 'Iqra University';
   static const String universityShortName = 'IUIC';
 
-  /// Minimum passing percentage (below this is F).
-  static const double passingPercent = 50;
-
-  static const List<GradeBand> gradeBands = [
+  static const List<GradeBand> legacyGradeBands = [
     GradeBand('A', 4.0, 88, 100, 'Exceptional'),
     GradeBand('B+', 3.5, 81, 87.999, 'Outstanding'),
     GradeBand('B', 3.0, 74, 80.999, 'Very Good'),
     GradeBand('C+', 2.5, 67, 73.999, 'Above Average'),
     GradeBand('C', 2.0, 60, 66.999, 'Satisfactory'),
-    GradeBand('D+', 1.5, 55, 59.999, 'Barely Acceptable'),
-    GradeBand('D', 1.0, 50, 54.999, 'Pass'),
+    GradeBand('F', 0.0, 0, 59.999, 'Fail'),
+  ];
+
+  static const List<GradeBand> spring2025GradeBands = [
+    GradeBand('A', 4.0, 90, 100, 'Outstanding'),
+    GradeBand('A-', 3.67, 85, 89.999, 'Excellent'),
+    GradeBand('B+', 3.33, 80, 84.999, 'Very Good'),
+    GradeBand('B', 3.0, 75, 79.999, 'Good'),
+    GradeBand('B-', 2.67, 70, 74.999, 'Fairly Good'),
+    GradeBand('C+', 2.33, 65, 69.999, 'Above Average'),
+    GradeBand('C', 2.0, 60, 64.999, 'Average'),
+    GradeBand('C-', 1.67, 56, 59.999, 'Below Average'),
+    GradeBand('D+', 1.33, 53, 55.999, 'Poor'),
+    GradeBand('D', 1.0, 50, 52.999, 'Unsatisfactory'),
     GradeBand('F', 0.0, 0, 49.999, 'Fail'),
   ];
 
-  static GradeBand bandForPercent(double percent) {
-    for (final band in gradeBands) {
-      if (percent >= band.minPercent && percent <= band.maxPercent) {
-        return band;
-      }
+  static List<GradeBand> gradeBandsFor(GradingScale scale) =>
+      scale == GradingScale.legacy ? legacyGradeBands : spring2025GradeBands;
+
+  static double passingPercentFor(GradingScale scale) =>
+      scale == GradingScale.legacy ? 60 : 50;
+
+  static GradeBand bandForPercent(
+    double percent, {
+    GradingScale scale = GradingScale.spring2025,
+  }) {
+    final bands = gradeBandsFor(scale);
+    for (final band in bands) {
+      if (percent >= band.minPercent) return band;
     }
-    return percent > 100 ? gradeBands.first : gradeBands.last;
+    return percent > 100 ? bands.first : bands.last;
   }
 
-  /// Quality points for one course: flat grade point (by percentage band)
-  /// multiplied by credit hours. [obtainedMarks] is the course's own
-  /// percentage/marks out of 100 — Iqra does not scale total marks by
-  /// credit hours the way some other universities do.
   static double qualityPointsFor({
     required double obtainedMarks,
     required int creditHours,
+    GradingScale scale = GradingScale.spring2025,
   }) {
-    final band = bandForPercent(obtainedMarks);
-    return band.gradePoint * creditHours;
+    return bandForPercent(obtainedMarks, scale: scale).gradePoint * creditHours;
   }
 
-  /// Iqra's official probation threshold is a semester GPA below 1.70
-  /// (per the revised Spring 2025 scheme). Below that is flagged; below
-  /// 2.00 (the "C" / degree-requirement floor) is a softer warning.
+  static String standingForSemesterGpa(double gpa) {
+    if (gpa < 1.7) return 'Probation Risk (semester GPA below 1.70)';
+    if (gpa < 2.0) return 'Below Degree Requirement (2.00)';
+    if (gpa >= 3.5) return 'Excellent Standing';
+    if (gpa >= 3.0) return 'Very Good Standing';
+    if (gpa >= 2.5) return 'Good Standing';
+    return 'Satisfactory Standing';
+  }
+
   static String standingForCgpa(double cgpa) {
+    if (cgpa < 2.0) return 'Below Degree Requirement (CGPA below 2.00)';
     if (cgpa >= 3.5) return 'Excellent Standing';
     if (cgpa >= 3.0) return 'Very Good Standing';
     if (cgpa >= 2.5) return 'Good Standing';
-    if (cgpa >= 2.0) return 'Satisfactory Standing';
-    if (cgpa >= 1.7) return 'Below Degree Requirement (2.00)';
-    return 'Probation Risk (below 1.70)';
+    return 'Satisfactory Standing';
   }
 }
 
 class GpaResult {
   final double gpa;
   final int totalCreditHours;
-  const GpaResult({required this.gpa, required this.totalCreditHours});
+  final double qualityPoints;
+
+  const GpaResult({
+    required this.gpa,
+    required this.totalCreditHours,
+    this.qualityPoints = 0,
+  });
 }
 
-/// Pure calculation logic for Iqra University's GPA/CGPA formula.
-///
-/// NOTE ON ROUNDING: unlike UAAR (verified via real transcripts to
-/// truncate), we have no real Iqra transcript to confirm whether the
-/// university rounds or truncates its displayed GPA. This engine uses
-/// standard rounding (round-half-up) to 2 decimals as the more common
-/// convention — flag this assumption if you find an official transcript
-/// that shows otherwise.
 class GpaEngine {
   GpaEngine._();
 
-  static double _round2(double value) {
-    return (value * 100).round() / 100;
+  static double _truncate2(double value) =>
+      (value * 100).truncateToDouble() / 100;
+
+  static ({bool original, double qualityPoints, int creditHours})
+  excludedRepeatAttempt({
+    required double originalGradePoint,
+    required int originalCreditHours,
+    required double repeatedGradePoint,
+    required int repeatedCreditHours,
+  }) {
+    if (originalGradePoint > repeatedGradePoint) {
+      return (
+        original: false,
+        qualityPoints: repeatedGradePoint * repeatedCreditHours,
+        creditHours: repeatedCreditHours,
+      );
+    }
+    return (
+      original: true,
+      qualityPoints: originalGradePoint * originalCreditHours,
+      creditHours: originalCreditHours,
+    );
   }
 
-  /// GPA for a list of (obtainedMarks, creditHours) course pairs.
   static GpaResult calculateGpa(
-    List<({double marks, int creditHours})> courses,
-  ) {
+    List<({double marks, int creditHours})> courses, {
+    GradingScale scale = GradingScale.spring2025,
+  }) {
     final valid = courses.where((c) => c.creditHours > 0).toList();
-    if (valid.isEmpty) return const GpaResult(gpa: 0, totalCreditHours: 0);
+    if (valid.isEmpty) {
+      return const GpaResult(gpa: 0, totalCreditHours: 0);
+    }
 
-    final totalCh = valid.fold<int>(0, (s, c) => s + c.creditHours);
+    final totalCh = valid.fold<int>(
+      0,
+      (sum, course) => sum + course.creditHours,
+    );
     final totalQp = valid.fold<double>(
       0,
-      (s, c) =>
-          s +
+      (sum, course) =>
+          sum +
           GradingData.qualityPointsFor(
-            obtainedMarks: c.marks,
-            creditHours: c.creditHours,
+            obtainedMarks: course.marks,
+            creditHours: course.creditHours,
+            scale: scale,
           ),
     );
-    final gpa = totalCh == 0 ? 0.0 : totalQp / totalCh;
-    return GpaResult(gpa: _round2(gpa), totalCreditHours: totalCh);
+    return GpaResult(
+      gpa: _truncate2(totalQp / totalCh),
+      totalCreditHours: totalCh,
+      qualityPoints: totalQp,
+    );
   }
 
-  /// CGPA for a list of semester contributions.
-  ///
-  /// Each semester passes its own (gpa, creditHours) as printed on the
-  /// transcript, PLUS optional [deductedQualityPoints] / [deductedCreditHours]
-  /// — the quality points and credit hours of any course taken THIS
-  /// semester that was later repeated (after failing) or improved in a
-  /// different semester. Per standard policy, only the new (better)
-  /// attempt counts toward CGPA — the original attempt's quality points
-  /// AND credit hours are dropped entirely, not averaged in.
   static GpaResult calculateCgpa(
     List<
       ({
@@ -148,18 +176,29 @@ class GpaEngine {
     >
     semesters,
   ) {
-    final valid = semesters.where((s) => s.creditHours > 0).toList();
-    if (valid.isEmpty) return const GpaResult(gpa: 0, totalCreditHours: 0);
+    final valid = semesters
+        .where((semester) => semester.creditHours > 0)
+        .toList();
+    if (valid.isEmpty) {
+      return const GpaResult(gpa: 0, totalCreditHours: 0);
+    }
 
     final totalCh = valid.fold<int>(
       0,
-      (s, x) => s + x.creditHours - x.deductedCreditHours,
+      (sum, semester) =>
+          sum + semester.creditHours - semester.deductedCreditHours,
     );
     final totalQp = valid.fold<double>(
       0,
-      (s, x) => s + (x.gpa * x.creditHours) - x.deductedQualityPoints,
+      (sum, semester) =>
+          sum +
+          (semester.gpa * semester.creditHours) -
+          semester.deductedQualityPoints,
     );
-    final cgpa = totalCh <= 0 ? 0.0 : totalQp / totalCh;
-    return GpaResult(gpa: _round2(cgpa), totalCreditHours: totalCh);
+    return GpaResult(
+      gpa: totalCh <= 0 ? 0 : _truncate2(totalQp / totalCh),
+      totalCreditHours: totalCh,
+      qualityPoints: totalQp,
+    );
   }
 }

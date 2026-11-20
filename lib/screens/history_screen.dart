@@ -23,7 +23,8 @@ class HistoryScreen extends StatefulWidget {
   State<HistoryScreen> createState() => _HistoryScreenState();
 }
 
-class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProviderStateMixin {
+class _HistoryScreenState extends State<HistoryScreen>
+    with SingleTickerProviderStateMixin {
   late final TabController _tabs;
 
   @override
@@ -43,10 +44,18 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Clear all history?'),
-        content: const Text('This will permanently delete every saved GPA and CGPA calculation.'),
+        content: const Text(
+          'This will permanently delete every saved GPA and CGPA calculation.',
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Clear')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Clear'),
+          ),
         ],
       ),
     );
@@ -59,10 +68,20 @@ class _HistoryScreenState extends State<HistoryScreen> with SingleTickerProvider
     return Scaffold(
       appBar: AppBar(
         title: const Text('History'),
-        bottom: TabBar(controller: _tabs, tabs: const [Tab(text: 'All'), Tab(text: 'GPA'), Tab(text: 'CGPA')]),
+        bottom: TabBar(
+          controller: _tabs,
+          tabs: const [
+            Tab(text: 'All'),
+            Tab(text: 'GPA'),
+            Tab(text: 'CGPA'),
+          ],
+        ),
         actions: [
           if (state.history.isNotEmpty)
-            IconButton(icon: const Icon(Icons.delete_sweep_outlined), onPressed: () => _confirmClear(state)),
+            IconButton(
+              icon: const Icon(Icons.delete_sweep_outlined),
+              onPressed: () => _confirmClear(state),
+            ),
         ],
       ),
       body: state.isLoading
@@ -100,7 +119,12 @@ class _List extends StatelessWidget {
         final e = entries[i];
         return HistoryTile(
           entry: e,
-          onDelete: () => state.deleteHistory(e.id),
+          onDelete: () => deleteHistoryWithUndo(
+            context,
+            entry: e,
+            delete: () => state.deleteHistory(e.id),
+            restore: state.restoreHistory,
+          ),
           onTap: () => _openEntry(context, e),
         );
       },

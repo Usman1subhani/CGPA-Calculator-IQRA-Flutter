@@ -34,7 +34,7 @@ class _MainShellState extends State<MainShell> {
 
     return PopScope(
       canPop: false,
-      onPopInvoked: (didPop) async {
+      onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
         if (_index != 0) {
           _go(0);
@@ -63,27 +63,27 @@ class _MainShellState extends State<MainShell> {
       },
       child: Scaffold(
         body: IndexedStack(index: _index, children: screens),
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _index,
-          onTap: _go,
-          items: const [
-            BottomNavigationBarItem(
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: _go,
+          destinations: const [
+            NavigationDestination(
               icon: Icon(Icons.home_rounded),
               label: 'Home',
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: Icon(Icons.calculate_rounded),
               label: 'GPA',
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: Icon(Icons.stacked_line_chart_rounded),
               label: 'CGPA',
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: Icon(Icons.history_rounded),
               label: 'History',
             ),
-            BottomNavigationBarItem(
+            NavigationDestination(
               icon: Icon(Icons.settings_rounded),
               label: 'Settings',
             ),

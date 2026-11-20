@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Iqra University brand palette — navy blue + gold, sampled from the
-/// official logo/icon. Field names are semantic (primary/accent) rather
-/// than color-literal, so re-skinning for a different university later
-/// only means changing the values here, not every call site.
+/// Navy-and-gold palette for the student calculator. Field names are
+/// semantic (primary/accent) rather than color-literal.
 class AppColors {
   AppColors._();
 
@@ -22,8 +20,9 @@ class AppColors {
 
   static const gradeA = Color(0xFF0A2C7A);
   static const gradeB = Color(0xFF3D5AA8);
-  static const gradeC = Color(0xFFF5A623);
-  static const gradeD = Color(0xFFE08A2C);
+  static const gradeC = Color(0xFF8A4B00);
+  static const gradeD = Color(0xFF7A3E00);
+  static const accentText = Color(0xFF8A4B00);
   static const gradeF = Color(0xFFBA1A1A);
 
   /// Groups any Iqra letter grade (A, A-, B+, B, B-, C+, C, C-, D+, D, F)
@@ -44,7 +43,6 @@ class AppColors {
     }
   }
 }
-
 
 class AppTheme {
   AppTheme._();
@@ -108,12 +106,8 @@ class AppTheme {
       ),
     ),
     dividerTheme: DividerThemeData(color: Colors.grey.shade200),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    navigationBarTheme: const NavigationBarThemeData(
       backgroundColor: AppColors.surfaceLight,
-      selectedItemColor: AppColors.primary,
-      unselectedItemColor: Color(0xFF5C6D65),
-      showUnselectedLabels: true,
-      type: BottomNavigationBarType.fixed,
     ),
   );
 
@@ -176,12 +170,8 @@ class AppTheme {
       ),
     ),
     dividerTheme: DividerThemeData(color: Colors.grey.shade800),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    navigationBarTheme: const NavigationBarThemeData(
       backgroundColor: AppColors.surfaceDark,
-      selectedItemColor: AppColors.primaryLight,
-      unselectedItemColor: Color(0xFFA3B4AB),
-      showUnselectedLabels: true,
-      type: BottomNavigationBarType.fixed,
     ),
   );
 }

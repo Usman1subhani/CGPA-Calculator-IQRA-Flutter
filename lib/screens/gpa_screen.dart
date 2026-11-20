@@ -4,9 +4,12 @@ import '../app_state.dart';
 import '../data/grading_data.dart';
 import '../models/course.dart';
 import '../models/history_entry.dart';
+import '../widgets/common.dart';
+import '../widgets/share_result_button.dart';
 import '../widgets/input_cards.dart';
 import '../widgets/result_card.dart';
 import '../widgets/screen_header.dart';
+import 'grading_scale_screen.dart';
 
 int _seq = 0;
 String _nextId() => 'c${DateTime.now().microsecondsSinceEpoch}_${_seq++}';
@@ -27,15 +30,17 @@ class _GpaScreenState extends State<GpaScreen> {
   late final TextEditingController _semesterController;
   final List<Course> _courses = [];
   GpaResult? _result;
+  String? _validationError;
   bool _saving = false;
   bool get _isEditing => widget.existingEntry != null;
-  bool _isPercentageMode = false;
+  GradingScale _gradingScale = GradingScale.spring2025;
 
   @override
   void initState() {
     super.initState();
     final entry = widget.existingEntry;
     if (entry != null) {
+      _gradingScale = entry.gradingScale;
       _semesterController = TextEditingController(text: entry.title);
       final savedCourses = entry.courses;
       if (savedCourses.isNotEmpty) {
@@ -59,6 +64,7 @@ class _GpaScreenState extends State<GpaScreen> {
     setState(() {
       _courses.add(Course(id: _nextId()));
       _result = null;
+      _validationError = null;
     });
   }
 
@@ -66,26 +72,51 @@ class _GpaScreenState extends State<GpaScreen> {
     setState(() {
       _courses.removeWhere((c) => c.id == id);
       _result = null;
+      _validationError = null;
     });
+  }
+
+  void _showInputError(String message, {bool silent = false}) {
+    if (silent) {
+      _validationError = message;
+      return;
+    }
+    setState(() => _validationError = message);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _calculate({bool silent = false}) {
     if (!silent) FocusScope.of(context).unfocus();
+    if (_courses.any(
+      (course) => course.creditHours < 1 || course.creditHours > 6,
+    )) {
+      _showInputError(
+        'Choose credit hours from 1 to 6 for every course.',
+        silent: silent,
+      );
+      return;
+    }
     final valid = _courses.where((c) => c.creditHours > 0).toList();
     if (valid.isEmpty) {
-      if (!silent) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please add at least one valid course.'),
-          ),
-        );
-      }
+      _showInputError(
+        'Add at least one course with valid credit hours.',
+        silent: silent,
+      );
+      return;
+    }
+    if (valid.any((course) => course.obtainedMarks == null)) {
+      _showInputError('Choose a grade for every course.', silent: silent);
       return;
     }
     final pairs = valid
-        .map((c) => (marks: c.obtainedMarks, creditHours: c.creditHours))
+        .map((c) => (marks: c.obtainedMarks!, creditHours: c.creditHours))
         .toList();
-    setState(() => _result = GpaEngine.calculateGpa(pairs));
+    setState(() {
+      _validationError = null;
+      _result = GpaEngine.calculateGpa(pairs, scale: _gradingScale);
+    });
   }
 
   Future<void> _save() async {
@@ -101,6 +132,8 @@ class _GpaScreenState extends State<GpaScreen> {
         title: title,
         value: _result!.gpa,
         creditHours: _result!.totalCreditHours,
+        qualityPoints: _result!.qualityPoints,
+        gradingScale: _gradingScale,
         date: DateTime.now(),
         rawData: rawData,
       );
@@ -120,6 +153,8 @@ class _GpaScreenState extends State<GpaScreen> {
       title: title,
       value: _result!.gpa,
       creditHours: _result!.totalCreditHours,
+      qualityPoints: _result!.qualityPoints,
+      gradingScale: _gradingScale,
       date: DateTime.now(),
       rawData: rawData,
     );
@@ -131,9 +166,11 @@ class _GpaScreenState extends State<GpaScreen> {
     ).showSnackBar(const SnackBar(content: Text('Saved to history')));
     setState(() {
       _result = null;
+      _validationError = null;
       _courses.clear();
-      _addCourse();
-      _addCourse();
+      _courses
+        ..add(Course(id: _nextId()))
+        ..add(Course(id: _nextId()));
     });
   }
 
@@ -146,7 +183,17 @@ class _GpaScreenState extends State<GpaScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(elevation: 0, title: const SizedBox.shrink()),
+      appBar: AppBar(
+        elevation: 0,
+        title: const SizedBox.shrink(),
+        actions: [
+          IconButton(
+            tooltip: 'Grading scale reference',
+            onPressed: () => openGradingScaleReference(context),
+            icon: const Icon(Icons.info_outline_rounded),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(18, 0, 18, 24),
         children: [
@@ -168,42 +215,44 @@ class _GpaScreenState extends State<GpaScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: RadioListTile<bool>(
-                  title: const Text('Grades'),
-                  value: false,
-                  groupValue: _isPercentageMode,
-                  onChanged: (val) {
-                    if (val != null) setState(() => _isPercentageMode = val);
-                  },
-                ),
-              ),
-              Expanded(
-                child: RadioListTile<bool>(
-                  title: const Text('Percentage'),
-                  value: true,
-                  groupValue: _isPercentageMode,
-                  onChanged: (val) {
-                    if (val != null) setState(() => _isPercentageMode = val);
-                  },
-                ),
-              ),
-            ],
+          DropdownButtonFormField<GradingScale>(
+            initialValue: _gradingScale,
+            decoration: const InputDecoration(labelText: 'Admission batch'),
+            items: GradingScale.values
+                .map(
+                  (scale) =>
+                      DropdownMenuItem(value: scale, child: Text(scale.label)),
+                )
+                .toList(),
+            onChanged: (scale) {
+              if (scale != null) {
+                setState(() {
+                  _gradingScale = scale;
+                  _result = null;
+                  _validationError = null;
+                });
+              }
+            },
           ),
+          const SizedBox(height: 8),
           ..._courses.asMap().entries.map(
             (e) => Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: CourseCard(
+                key: ValueKey(e.value.id),
                 course: e.value,
                 index: e.key,
-                isPercentageMode: _isPercentageMode,
+                gradingScale: _gradingScale,
                 onDelete: () => _removeCourse(e.value.id),
-                onChanged: () => setState(() => _result = null),
+                onChanged: () => setState(() {
+                  _result = null;
+                  _validationError = null;
+                }),
               ),
             ),
           ),
+          if (_validationError != null)
+            InputErrorBanner(message: _validationError!),
           const SizedBox(height: 6),
           OutlinedButton.icon(
             onPressed: _addCourse,
@@ -230,8 +279,19 @@ class _GpaScreenState extends State<GpaScreen> {
               label: 'Your GPA',
               value: _result!.gpa,
               totalCreditHours: _result!.totalCreditHours,
+              isSemesterGpa: true,
             ),
             const SizedBox(height: 14),
+            ShareResultButton(
+              resultType: 'Semester GPA',
+              value: _result!.gpa,
+              creditHours: _result!.totalCreditHours,
+              details: [
+                'Semester: ${_semesterController.text.trim()}',
+                'Grading scale: ${_gradingScale.label}',
+              ],
+            ),
+            const SizedBox(height: 10),
             ElevatedButton.icon(
               onPressed: _saving ? null : _save,
               icon: _saving

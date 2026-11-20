@@ -1,11 +1,11 @@
 {
-    "name": "GPA Calculator ( IUIC )",
-    "short_name": "GPA Calculator",
+    "name": "Student GPA Calculator",
+    "short_name": "Student GPA",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0D397C",
+    "theme_color": "#0D397C",
+    "description": "An independent student GPA and CGPA calculator supporting published Iqra University grading scales.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

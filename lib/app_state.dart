@@ -5,16 +5,18 @@ import 'storage/local_storage.dart';
 class AppState extends ChangeNotifier {
   List<HistoryEntry> _history = [];
   bool _loading = true;
-  ThemeMode _themeMode = ThemeMode.light;
+  ThemeMode _themeMode = ThemeMode.system;
 
   List<HistoryEntry> get history => _history;
   bool get isLoading => _loading;
   ThemeMode get themeMode => _themeMode;
-  bool get isDark => _themeMode == ThemeMode.dark;
 
-  List<HistoryEntry> get gpaHistory => _history.where((e) => e.type == HistoryType.gpa).toList();
-  List<HistoryEntry> get cgpaHistory => _history.where((e) => e.type == HistoryType.cgpa).toList();
-  HistoryEntry? get latestCgpa => cgpaHistory.isNotEmpty ? cgpaHistory.first : null;
+  List<HistoryEntry> get gpaHistory =>
+      _history.where((e) => e.type == HistoryType.gpa).toList();
+  List<HistoryEntry> get cgpaHistory =>
+      _history.where((e) => e.type == HistoryType.cgpa).toList();
+  HistoryEntry? get latestCgpa =>
+      cgpaHistory.isNotEmpty ? cgpaHistory.first : null;
 
   AppState() {
     _init();
@@ -22,7 +24,10 @@ class AppState extends ChangeNotifier {
 
   Future<void> _init() async {
     final savedTheme = await LocalStorage.instance.getThemeMode();
-    _themeMode = savedTheme == 'dark' ? ThemeMode.dark : ThemeMode.light;
+    _themeMode = ThemeMode.values.firstWhere(
+      (mode) => mode.name == savedTheme,
+      orElse: () => ThemeMode.system,
+    );
     await reloadHistory();
   }
 
@@ -49,20 +54,25 @@ class AppState extends ChangeNotifier {
     await reloadHistory();
   }
 
+  Future<void> restoreHistory(HistoryEntry entry) async {
+    await LocalStorage.instance.updateEntry(entry);
+    await reloadHistory();
+  }
+
   Future<void> clearHistory() async {
     await LocalStorage.instance.clearHistory();
     await reloadHistory();
   }
 
-  Future<void> setDarkMode(bool isDark) async {
-    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+  Future<void> setThemeMode(ThemeMode mode) async {
+    _themeMode = mode;
     notifyListeners();
-    await LocalStorage.instance.setThemeMode(isDark ? 'dark' : 'light');
+    await LocalStorage.instance.setThemeMode(mode.name);
   }
 
   Future<void> resetAll() async {
     await LocalStorage.instance.resetAll();
-    _themeMode = ThemeMode.light;
+    _themeMode = ThemeMode.system;
     await reloadHistory();
   }
 }

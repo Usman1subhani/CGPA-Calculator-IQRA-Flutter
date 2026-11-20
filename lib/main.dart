@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'app_info.dart';
 import 'app_state.dart';
-import 'splash_screen.dart';
+import 'main_shell.dart';
 import 'theme.dart';
 
 void main() {
@@ -25,7 +25,7 @@ class MainApp extends StatelessWidget {
             theme: AppTheme.light,
             darkTheme: AppTheme.dark,
             themeMode: state.themeMode,
-            home: const SplashScreen(),
+            home: const MainShell(),
           );
         },
       ),

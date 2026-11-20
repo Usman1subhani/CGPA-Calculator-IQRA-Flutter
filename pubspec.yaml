@@ -1,5 +1,5 @@
 name: gpa_calculator_iuic
-description: "GPA Calculator ( IUIC ) — Iqra University GPA & CGPA Calculator"
+description: "Independent student GPA and CGPA calculator supporting published Iqra University grading scales."
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -31,4 +31,12 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: true
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/play_store_icon.png"
+    background_color: "#0D397C"
+    theme_color: "#0D397C"
   image_path: "assets/icon.png"
+  adaptive_icon_background: "#0D397C"
+  adaptive_icon_foreground: "assets/icon_foreground.png"

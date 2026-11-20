@@ -3,6 +3,53 @@ import 'package:intl/intl.dart';
 import '../models/history_entry.dart';
 import '../theme.dart';
 
+Future<void> deleteHistoryWithUndo(
+  BuildContext context, {
+  required HistoryEntry entry,
+  required Future<void> Function() delete,
+  required Future<void> Function(HistoryEntry) restore,
+}) async {
+  await delete();
+  if (!context.mounted) return;
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: const Text('Calculation deleted'),
+      action: SnackBarAction(label: 'Undo', onPressed: () => restore(entry)),
+    ),
+  );
+}
+
+class InputErrorBanner extends StatelessWidget {
+  final String message;
+
+  const InputErrorBanner({super.key, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(top: 8, bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colors.errorContainer,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline_rounded, color: colors.onErrorContainer),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: colors.onErrorContainer),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -49,13 +96,22 @@ class HistoryTile extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback? onTap;
 
-  const HistoryTile({super.key, required this.entry, required this.onDelete, this.onTap});
+  const HistoryTile({
+    super.key,
+    required this.entry,
+    required this.onDelete,
+    this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isGpa = entry.type == HistoryType.gpa;
-    final color = isGpa ? AppColors.primary : AppColors.accent;
+    final color = isGpa
+        ? AppColors.primary
+        : theme.brightness == Brightness.dark
+        ? AppColors.accentLight
+        : AppColors.accentText;
 
     return Dismissible(
       key: ValueKey(entry.id),
@@ -77,7 +133,10 @@ class HistoryTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           onTap: onTap,
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 14,
+              vertical: 4,
+            ),
             leading: Container(
               width: 42,
               height: 42,
@@ -86,7 +145,9 @@ class HistoryTile extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                isGpa ? Icons.calculate_outlined : Icons.stacked_line_chart_rounded,
+                isGpa
+                    ? Icons.calculate_outlined
+                    : Icons.stacked_line_chart_rounded,
                 color: color,
               ),
             ),
@@ -97,7 +158,10 @@ class HistoryTile extends StatelessWidget {
             ),
             trailing: Text(
               entry.value.toStringAsFixed(2),
-              style: theme.textTheme.titleMedium?.copyWith(color: color, fontWeight: FontWeight.w700),
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: color,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ),
