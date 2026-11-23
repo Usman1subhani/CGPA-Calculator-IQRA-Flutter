@@ -48,7 +48,7 @@ tasks.configureEach {
 }
 
 android {
-    namespace = "com.example.gpa_calculator_iuic"
+    namespace = "com.usmansubhani.gpacalculator"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
