@@ -1,6 +1,6 @@
 {
-    "name": "Student GPA Calculator",
-    "short_name": "Student GPA",
+    "name": "IU GPA Calculator",
+    "short_name": "IU GPA Calculator",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0D397C",

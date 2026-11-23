@@ -1,4 +1,4 @@
-# Student GPA Calculator — Flutter app
+# IU GPA Calculator — Flutter app
 
 A Flutter app for GPA and CGPA calculation that supports grading scales
 published by Iqra University. It is independently developed and is not
@@ -10,7 +10,7 @@ the grading-scale reference is available from the calculators and Settings.
 
 ## App name & branding
 
-- Display name: **"Student GPA Calculator"** — set at the OS level for
+- Display name: **"IU GPA Calculator"** — set at the OS level for
   every platform (Android `AndroidManifest.xml`, iOS `CFBundleDisplayName`,
   macOS `PRODUCT_NAME`, Linux window/header title, Windows window title +
   `Runner.rc`). Inside Dart code it's defined once in `lib/app_info.dart`
