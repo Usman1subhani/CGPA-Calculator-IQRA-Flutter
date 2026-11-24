@@ -119,8 +119,8 @@ class GpaResult {
 class GpaEngine {
   GpaEngine._();
 
-  static double _truncate2(double value) =>
-      ((value * 100) + 1e-9).floorToDouble() / 100;
+  static double _round2(double value) =>
+      ((value * 100) + 1e-9).roundToDouble() / 100;
 
   static ({bool original, double qualityPoints, int creditHours})
   excludedRepeatAttempt({
@@ -167,7 +167,7 @@ class GpaEngine {
           ),
     );
     return GpaResult(
-      gpa: _truncate2(totalQp / totalCh),
+      gpa: _round2(totalQp / totalCh),
       totalCreditHours: totalCh,
       qualityPoints: totalQp,
     );
@@ -204,7 +204,7 @@ class GpaEngine {
           semester.deductedQualityPoints,
     );
     return GpaResult(
-      gpa: totalCh <= 0 ? 0 : _truncate2(totalQp / totalCh),
+      gpa: totalCh <= 0 ? 0 : _round2(totalQp / totalCh),
       totalCreditHours: totalCh,
       qualityPoints: totalQp,
     );

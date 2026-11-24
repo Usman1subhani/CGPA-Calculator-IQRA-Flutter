@@ -33,6 +33,7 @@ class _CgpaScreenState extends State<CgpaScreen> {
   bool _saving = false;
   bool _showRepeatTip = true;
   bool _scaleLoaded = false;
+  bool _admissionBatchSelected = false;
   bool get _isEditing => widget.existingEntry != null;
   GradingScale _gradingScale = GradingScale.spring2025;
   final Map<String, int> _formRevisions = {};
@@ -43,6 +44,7 @@ class _CgpaScreenState extends State<CgpaScreen> {
     super.initState();
     final entry = widget.existingEntry;
     if (entry != null) {
+      _admissionBatchSelected = true;
       _gradingScale = entry.gradingScale;
       final savedSemesters = entry.semesters;
       if (savedSemesters.isNotEmpty) {
@@ -79,6 +81,7 @@ class _CgpaScreenState extends State<CgpaScreen> {
         }
       }
       _gradingScale = scale;
+      _admissionBatchSelected = true;
       _result = null;
       _validationError = null;
     });
@@ -393,6 +396,7 @@ class _CgpaScreenState extends State<CgpaScreen> {
               }
             },
           ),
+          AdmissionBatchHint(visible: !_admissionBatchSelected),
           const SizedBox(height: 14),
           ..._semesters.asMap().entries.map(
             (e) => Padding(

@@ -7,7 +7,7 @@ plugins {
 }
 
 val selectedApplicationId = providers.gradleProperty("applicationId").orNull
-    ?: "com.example.gpa_calculator_iuic"
+    ?: "com.usmansubhani.iu_gpacalculator"
 val keyPropertiesFile = rootProject.file("key.properties")
 val keyProperties = Properties()
 if (keyPropertiesFile.exists()) {
@@ -48,7 +48,7 @@ tasks.configureEach {
 }
 
 android {
-    namespace = "com.usmansubhani.gpacalculator"
+    namespace = "com.usmansubhani.iu_gpacalculator"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

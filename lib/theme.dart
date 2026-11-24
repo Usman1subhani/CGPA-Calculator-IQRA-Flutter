@@ -65,9 +65,12 @@ class AppTheme {
     ),
     cardTheme: CardThemeData(
       color: AppColors.surfaceLight,
-      elevation: 1.5,
-      shadowColor: Colors.black.withValues(alpha: 0.08),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 4,
+      shadowColor: Colors.black.withValues(alpha: 0.12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
       margin: EdgeInsets.zero,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -108,6 +111,8 @@ class AppTheme {
     dividerTheme: DividerThemeData(color: Colors.grey.shade200),
     navigationBarTheme: const NavigationBarThemeData(
       backgroundColor: AppColors.surfaceLight,
+      elevation: 8,
+      height: 64,
     ),
   );
 
@@ -129,9 +134,12 @@ class AppTheme {
     ),
     cardTheme: CardThemeData(
       color: AppColors.surfaceDark,
-      elevation: 1.5,
-      shadowColor: Colors.black.withValues(alpha: 0.3),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 5,
+      shadowColor: Colors.black.withValues(alpha: 0.55),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+      ),
       margin: EdgeInsets.zero,
     ),
     elevatedButtonTheme: ElevatedButtonThemeData(
@@ -172,6 +180,8 @@ class AppTheme {
     dividerTheme: DividerThemeData(color: Colors.grey.shade800),
     navigationBarTheme: const NavigationBarThemeData(
       backgroundColor: AppColors.surfaceDark,
+      elevation: 8,
+      height: 64,
     ),
   );
 }

@@ -33,6 +33,7 @@ class _GpaScreenState extends State<GpaScreen> {
   String? _validationError;
   bool _saving = false;
   bool _scaleLoaded = false;
+  bool _admissionBatchSelected = false;
   bool get _isEditing => widget.existingEntry != null;
   GradingScale _gradingScale = GradingScale.spring2025;
 
@@ -41,6 +42,7 @@ class _GpaScreenState extends State<GpaScreen> {
     super.initState();
     final entry = widget.existingEntry;
     if (entry != null) {
+      _admissionBatchSelected = true;
       _gradingScale = entry.gradingScale;
       _semesterController = TextEditingController(text: entry.title);
       final savedCourses = entry.courses;
@@ -80,6 +82,7 @@ class _GpaScreenState extends State<GpaScreen> {
         clearedGrade = course.updateScale(scale) || clearedGrade;
       }
       _gradingScale = scale;
+      _admissionBatchSelected = true;
       _result = null;
       _validationError = null;
     });
@@ -265,6 +268,7 @@ class _GpaScreenState extends State<GpaScreen> {
               }
             },
           ),
+          AdmissionBatchHint(visible: !_admissionBatchSelected),
           const SizedBox(height: 8),
           ..._courses.asMap().entries.map(
             (e) => Padding(

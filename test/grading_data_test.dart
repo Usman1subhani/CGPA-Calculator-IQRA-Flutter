@@ -97,7 +97,7 @@ void main() {
       );
     });
 
-    test('truncates the displayed GPA rather than rounding it', () {
+    test('rounds the displayed GPA to two decimal places', () {
       final result = GpaEngine.calculateGpa([
         (marks: 92.0, creditHours: 3),
         (marks: 78.0, creditHours: 3),
@@ -105,7 +105,7 @@ void main() {
       ]);
       expect(result.totalCreditHours, 9);
       expect(result.qualityPoints, closeTo(24.99, 0.001));
-      expect(result.gpa, 2.77);
+      expect(result.gpa, 2.78);
     });
 
     test('a selected F grade contributes zero points', () {
@@ -125,7 +125,7 @@ void main() {
   });
 
   group('CGPA calculation', () {
-    test('combines multiple semesters by credit-hour weight and truncates', () {
+    test('combines multiple semesters by credit-hour weight and rounds', () {
       final result = GpaEngine.calculateCgpa([
         (
           gpa: 3.5,
@@ -156,10 +156,10 @@ void main() {
         ),
       ]);
       expect(result.qualityPoints, closeTo(exactQualityPoints, 1e-10));
-      expect(result.gpa, 3.33);
+      expect(result.gpa, 3.34);
     });
 
-    test('does not truncate an exactly representable decimal GPA down', () {
+    test('does not change an exactly representable decimal GPA', () {
       final result = GpaEngine.calculateCgpa([
         (
           gpa: 2.3,

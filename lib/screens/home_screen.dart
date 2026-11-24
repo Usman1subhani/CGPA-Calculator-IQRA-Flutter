@@ -115,58 +115,68 @@ class _Hero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final overall = state.latestCgpa;
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.primary, AppColors.primaryDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        color: theme.cardTheme.color,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.06)
+              : Colors.grey.shade200,
         ),
-        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: isDark
+                ? Colors.black.withValues(alpha: 0.55)
+                : Colors.black.withValues(alpha: 0.12),
+            blurRadius: isDark ? 14 : 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Welcome back 👋',
-            style: TextStyle(color: Colors.white70, fontSize: 13),
-          ),
-          const SizedBox(height: 4),
           Text(
             AppInfo.appName,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 17,
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           if (overall != null)
             Row(
               children: [
-                const Icon(
-                  Icons.emoji_events_rounded,
-                  color: AppColors.accentLight,
-                  size: 20,
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(
+                    Icons.emoji_events_rounded,
+                    color: AppColors.accent,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
                   'Overall CGPA: ${overall.value.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
                   ),
                 ),
               ],
             )
           else
-            const Text(
+            Text(
               'Calculate your first GPA or CGPA below.',
-              style: TextStyle(color: Colors.white70, fontSize: 13),
+              style: theme.textTheme.bodyMedium,
             ),
         ],
       ),
@@ -190,6 +200,7 @@ class _ActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -200,7 +211,20 @@ class _ActionCard extends StatelessWidget {
           decoration: BoxDecoration(
             color: theme.cardTheme.color,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: color.withValues(alpha: 0.2)),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.06)
+                  : color.withValues(alpha: 0.18),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: isDark
+                    ? Colors.black.withValues(alpha: 0.55)
+                    : Colors.black.withValues(alpha: 0.12),
+                blurRadius: isDark ? 14 : 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Column(
             children: [

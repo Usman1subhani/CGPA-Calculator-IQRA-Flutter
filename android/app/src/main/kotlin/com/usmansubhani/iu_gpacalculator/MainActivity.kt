@@ -1,4 +1,4 @@
-package com.usmansubhani.gpacalculator
+package com.usmansubhani.iu_gpacalculator
 
 import io.flutter.embedding.android.FlutterActivity
 

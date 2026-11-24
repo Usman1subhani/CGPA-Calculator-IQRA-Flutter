@@ -5,7 +5,7 @@
 class AppInfo {
   AppInfo._();
 
-  static const String appName = 'IU GPA Calculator';
+  static const String appName = 'IQRA UNIVERSITY GPA Calculator (unofficial)';
   static const String appNameShort = 'IU GPA Calculator';
   static const String universityName = 'Iqra University';
   static const String universityShortName = 'IUIC';

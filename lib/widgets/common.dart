@@ -3,6 +3,93 @@ import 'package:intl/intl.dart';
 import '../models/history_entry.dart';
 import '../theme.dart';
 
+class AdmissionBatchHint extends StatefulWidget {
+  final bool visible;
+
+  const AdmissionBatchHint({super.key, required this.visible});
+
+  @override
+  State<AdmissionBatchHint> createState() => _AdmissionBatchHintState();
+}
+
+class _AdmissionBatchHintState extends State<AdmissionBatchHint>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 850),
+      lowerBound: 0.55,
+      upperBound: 1,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void didUpdateWidget(AdmissionBatchHint oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!widget.visible && _controller.isAnimating) {
+      _controller.stop();
+    } else if (widget.visible && !_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.visible) return const SizedBox.shrink();
+
+    final colors = Theme.of(context).colorScheme;
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: _controller.value,
+          child: Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              color: colors.primaryContainer,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: colors.primary.withValues(alpha: _controller.value),
+                width: 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.touch_app_rounded,
+                  size: 20,
+                  color: colors.onPrimaryContainer,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Select your admission batch above',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: colors.onPrimaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 Future<void> deleteHistoryWithUndo(
   BuildContext context, {
   required HistoryEntry entry,

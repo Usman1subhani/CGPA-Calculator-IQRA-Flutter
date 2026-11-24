@@ -72,7 +72,7 @@ class GradingScaleScreen extends StatelessWidget {
             const SizedBox(height: 18),
           ],
           Text(
-            'Quality points = grade point × course credit hours. GPA and CGPA are displayed truncated to two decimal places.',
+            'Quality points = grade point × course credit hours. GPA and CGPA are displayed rounded to two decimal places.',
             style: theme.textTheme.bodySmall,
           ),
           const SizedBox(height: 12),

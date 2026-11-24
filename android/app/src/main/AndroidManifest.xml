@@ -10,7 +10,7 @@
         </intent>
     </queries>
     <application
-        android:label="IU GPA Calculator"
+        android:label="IQRA UNIVERSITY GPA Calculator (unofficial)"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

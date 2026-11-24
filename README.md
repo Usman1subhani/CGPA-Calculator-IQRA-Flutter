@@ -62,9 +62,9 @@ on Iqra University's [Undergraduate Handbook, version 14.0](https://iqra.edu.pk/
 Grade points are flat per letter grade: `Quality Points = grade point ×
 credit hours`. A course mark is its percentage out of 100. GPA is the sum
 of quality points divided by the sum of credit hours. Displayed GPA/CGPA
-is **truncated, not rounded**, to two decimal places. Exact course quality
+is **rounded** to two decimal places. Exact course quality
 points are retained, and a saved GPA can be imported into CGPA to avoid
-weighting a truncated semester GPA.
+weighting an exact semester GPA.
 
 When a course is repeated or improved, the better of the two grades is
 counted. Probation is reported only for **semester GPA** below 1.70;
