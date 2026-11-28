@@ -147,7 +147,7 @@ dart run flutter_launcher_icons
 ## Before publishing
 
 - The selected Android application ID is
-  `com.usmansubhani.gpacalculator` in `android/gradle.properties`. Verify that
+  `com.usmansubhani.iu_gpacalculator` in `android/gradle.properties`. Verify that
   it is available in Play Console before creating the listing; it cannot be
   changed after publishing. Release builds reject the template `com.example`
   ID.
